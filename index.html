@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>atiMultimetro - Simulador de multímetro digital</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:#e8ecf2;color:#1c2733}
+header{padding:10px 18px;background:#1f3a7a;color:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#about{padding:7px 16px;border:1px solid rgba(255,255,255,.7);border-radius:8px;background:rgba(255,255,255,.12);color:#fff;font-size:14px;cursor:pointer}#about:hover{background:rgba(255,255,255,.25)}
+#abm{position:fixed;inset:0;background:rgba(15,25,45,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}#abm[hidden]{display:none}
+.abc{background:#fff;border-radius:14px;max-width:440px;width:100%;padding:22px 24px;text-align:center;line-height:1.55;box-shadow:0 12px 36px rgba(0,0,0,.4)}.abc h2{margin:0;font-size:18px;color:#1f3a7a}.abc .ver{font-size:13px;color:#4a596b;margin-bottom:8px}.abc p{margin:6px 0}.abc a{color:#1f5fd0;font-weight:700}.abc button{margin-top:12px;padding:8px 22px;border:0;border-radius:8px;background:#1f3a7a;color:#fff;font-size:14px;cursor:pointer}
+h1{font-size:20px;margin:0}header p{margin:2px 0 0;font-size:13px;opacity:.85}
+#tabs{display:flex;gap:4px;padding:8px 12px 0;max-width:1100px;margin:auto}
+#tabs button{padding:8px 16px;border:0;border-radius:8px 8px 0 0;background:#c9d2e0;font-size:14px;cursor:pointer}
+#tabs button.on{background:#fff;font-weight:700}
+main{max-width:1100px;margin:auto;background:#fff;padding:12px;border-radius:0 8px 8px 8px}
+.bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.bar button,.row button{padding:7px 12px;border:1px solid #9aa7b8;background:#f6f8fb;border-radius:6px;font-size:13px;cursor:pointer}
+.bar button.on{background:#1f3a7a;color:#fff;border-color:#1f3a7a}
+svg{width:100%;height:auto;display:block;user-select:none;touch-action:none;background:#dfe5ee;border-radius:12px}
+.dl{font-size:11px;font-weight:700;cursor:pointer}.dl:hover,.dl.act{fill:#fff!important}
+.note,.fb{padding:9px 12px;border-radius:8px;font-size:14px;line-height:1.4;margin-top:8px;background:#eef2f8;border-left:5px solid #8896ab}
+.note.bad,.fb.bad{background:#fdeceb;border-color:#d33}.note.tip,.fb.tip{background:#fff7e0;border-color:#e6a100}.fb.ok{background:#eaf8ef;border-color:#1f9d55}
+.task{background:#f3f6fb;border-radius:10px;padding:12px;margin-top:8px}
+#ttxt{font-size:16px;font-weight:700}#given{margin:6px 0;font-size:15px}#formula{margin:6px 0;padding:6px 10px;background:#fff;border-radius:6px;font-size:13.5px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.row input{padding:8px;font-size:16px;width:140px;border:1px solid #9aa7b8;border-radius:6px}
+#help{line-height:1.55;font-size:15px}#help h2{font-size:17px;margin:14px 0 4px}#help li{margin:2px 0}
+.calc{max-width:340px;margin:12px auto;padding:18px;border-radius:24px;background:linear-gradient(#3b414d,#20232a);box-shadow:0 8px 20px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.15)}
+.calc .brand{color:#cfd6e2;font-size:12px;letter-spacing:2px;font-weight:700;margin:0 4px 8px;display:flex;justify-content:space-between}
+.lcd{background:#b9cdb0;border:3px solid #15181e;border-radius:8px;padding:8px 12px;text-align:right;box-shadow:inset 0 3px 8px rgba(0,0,0,.35);font-family:"Lucida Console","Courier New",monospace;color:#13222e}
+#kt{height:18px;font-size:14px;opacity:.7;overflow:hidden;white-space:nowrap}
+#kd{font-size:38px;font-weight:700;height:50px;line-height:50px;overflow:hidden;white-space:nowrap}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.keys button{height:56px;border:0;border-radius:11px;font-size:23px;font-weight:700;cursor:pointer;background:linear-gradient(#fafbfc,#d8dde5);color:#1c2733;box-shadow:0 4px 0 #8f98a8,0 6px 8px rgba(0,0,0,.35)}
+.keys button:active{transform:translateY(3px);box-shadow:0 1px 0 #8f98a8}
+.keys .fn{background:linear-gradient(#a3adbd,#7d8798);color:#fff}.keys .op{background:linear-gradient(#ffb43a,#ee8f0a);color:#fff}
+.keys .cl{background:linear-gradient(#f0666b,#d03a40);color:#fff}.keys .eq{background:linear-gradient(#4b86f0,#2556bd);color:#fff}
+.chint{text-align:center;font-size:13px;color:#4a596b;margin-top:6px}
+#stage{position:relative;margin:0 auto}#sv2{position:absolute;left:0;top:0;width:100%;height:100%;background:none;border-radius:0;pointer-events:none}#probes>g{pointer-events:auto}#ov .note{margin-top:0}#ov .task{margin-top:8px}
+</style></head><body>
+<header><div><h1>atiMultimetro - Simulador de multímetro digital</h1><p>Arrastra los cables para medir voltaje, resistencia y corriente · Ley de Ohm</p></div><button id="about" type="button">Acerca de</button></header>
+<nav id="tabs"><button class="on" data-m="p">Práctica</button><button data-m="c">Cálculo (Ley de Ohm)</button><button data-m="k">Calculadora</button><button data-m="h">Ayuda</button></nav>
+<main>
+<section id="work">
+<div class="bar" id="cbar"></div>
+<div id="stage"><svg id="sv" viewBox="0 0 940 700">
+<g id="meter" transform="translate(10,20)">
+<rect width="320" height="610" rx="34" fill="#f6c026" stroke="#c4900a" stroke-width="3"/>
+<rect x="16" y="16" width="288" height="440" rx="24" fill="#2f4ea6"/>
+<text x="34" y="46" fill="#fff" font-size="12" font-weight="700">MULTÍMETRO DIGITAL</text>
+<text x="286" y="46" fill="#fff" font-size="17" font-weight="700" text-anchor="end">B830L</text>
+<g font-size="13" font-weight="700" text-anchor="middle" fill="#3a2a00"><text x="60" y="482">10A</text><text x="160" y="482">COM</text><text x="260" y="482">VΩmA</text>
+<text x="60" y="578" font-size="9">10A MÁX</text><text x="260" y="578" font-size="9">200mA MÁX</text></g>
+<circle id="j10" cx="60" cy="520" r="19" fill="#2a1a1a" stroke="#6b4a00" stroke-width="4" style="cursor:pointer"/>
+<circle cx="160" cy="520" r="19" fill="#2a1a1a" stroke="#6b4a00" stroke-width="4"/>
+<circle id="jV" cx="260" cy="520" r="19" fill="#2a1a1a" stroke="#6b4a00" stroke-width="4" style="cursor:pointer"/>
+<circle id="plugR" r="11" fill="#e02b2b" cy="520" style="pointer-events:none"/><circle cx="160" cy="520" r="11" fill="#555" style="pointer-events:none"/>
+</g>
+<g id="cvg"></g>
+</svg>
+<div id="ov"><div id="mnote" class="note"></div>
+<div class="task"><div id="ttxt"></div><div id="given"></div><div id="formula"></div>
+<div class="row"><input id="ans" inputmode="decimal" placeholder="Tu respuesta"><b id="tu"></b><button id="ver">Verificar</button><button id="next">Otro ejercicio</button></div>
+<div id="tfb" class="fb" style="display:none"></div></div></div>
+<svg id="sv2" viewBox="0 0 940 700"><g id="leads" fill="none" stroke-width="6" stroke-linecap="round"><path id="lr" stroke="#c62222"/><path id="lb" stroke="#222"/></g><g id="probes"></g></svg></div>
+</section>
+<section id="calc" hidden>
+<div class="calc"><div class="brand"><span>CALCULADORA BÁSICA</span><span>atiCal</span></div>
+<div class="lcd"><div id="kt"></div><div id="kd">0</div></div><div class="keys" id="keys"></div></div>
+<div class="chint">También puedes usar el teclado: números, + − * /, Enter, Retroceso y Esc.</div>
+</section>
+<section id="help" hidden>
+<h2>Qué hay en cada pestaña</h2>
+<ul><li><b>Práctica:</b> mides con el multímetro virtual un circuito con valores al azar y escribes el resultado.</li>
+<li><b>Cálculo (Ley de Ohm):</b> te dan dos valores y calculas el tercero.</li>
+<li><b>Calculadora:</b> calculadora básica para hacer tus cuentas (ver más abajo).</li>
+<li><b>Acerca de</b> (botón de la cabecera azul): datos del programa y del autor.</li></ul>
+<h2>Modo práctica paso a paso</h2>
+<ol><li>Elige el <b>circuito</b>: serie, paralelo o mixto. «Valores nuevos» cambia al azar la pila (1,5 a 12 V) y las resistencias (100 Ω a 10 kΩ).</li>
+<li>Lee el ejercicio, que aparece debajo del circuito, y gira la <b>perilla</b>: clic en una posición del dial, clic a la izquierda o derecha de la perilla, o rueda del ratón.</li>
+<li><b>Arrastra la punta roja y la negra</b> hasta los puntos amarillos del circuito. Al acercarlas a un punto se pegan solas. Para moverlas de nuevo, vuelve a arrastrarlas.</li>
+<li>Haz clic sobre el <b>interruptor</b> del circuito (o en el botón de arriba) para abrirlo o cerrarlo.</li>
+<li>Lee la pantalla, escribe el valor en la unidad que pide el ejercicio y pulsa <b>Verificar</b>. Se acepta un error de 5 %. Tras 2 intentos fallidos se muestra la solución. «Otro ejercicio» propone uno nuevo.</li></ol>
+<h2>Cómo medir cada magnitud</h2>
+<ul><li><b>Voltaje (DCV):</b> con el interruptor cerrado y en <b>paralelo</b>: punta roja en el extremo + del componente y negra en el otro. Si las inviertes, el valor sale con signo «−».</li>
+<li><b>Resistencia (Ω):</b> con el interruptor <b>abierto</b>, con las puntas en los dos extremos de un mismo componente. Con el circuito energizado la pantalla marca O.L y avisa.</li>
+<li><b>Corriente (DCA):</b> en <b>serie</b> y con el interruptor cerrado. Las puntas van en los dos extremos de un hueco del cable (<b>G1, G2, G3</b>), como si abrieras el cable para meter el multímetro. Conectar las puntas en paralelo con una lámpara o con la pila es un cortocircuito.</li></ul>
+<h2>Qué mide cada hueco G</h2>
+<ul><li><b>Circuito en serie:</b> G1 y G2 dan la misma corriente, porque es un solo camino.</li>
+<li><b>Paralelo y mixto:</b> G1 mide la corriente total que entrega la pila, G2 la de L1 y G3 la de L2. Se cumple G1 = G2 + G3.</li>
+<li>El voltaje entre los dos extremos de un hueco es 0 V, porque es solo cable.</li></ul>
+<h2>Jacks y escalas</h2>
+<ul><li>El cable negro va siempre en <b>COM</b>. El rojo va en <b>VΩmA</b> para voltaje, resistencia y mA, y en <b>10A</b> solo para la posición 10A. Haz clic en un jack para mover el cable rojo.</li>
+<li>Si no sabes el valor, empieza por una escala alta y ve bajando para ganar decimales.</li>
+<li><b>O.L</b> en la pantalla: el valor es mayor que la escala, el circuito está abierto o la conexión es incorrecta. Sube de escala (si pasa de 200 mA, usa 10A).</li>
+<li>Si marca <b>0,00</b> con una corriente que existe, la escala es demasiado grande. La posición 10A solo distingue de 0,01 A en 0,01 A: para circuitos con lámparas y resistencias usa <b>DCA 20m</b> o <b>DCA 200m</b>.</li>
+<li>Cuida las unidades: V, Ω, kΩ, mA y A. 1 A = 1000 mA.</li></ul>
+<h2>Voltaje y corriente en cada circuito</h2>
+<ul><li><b>Serie:</b> la corriente es la misma en todo el circuito y el voltaje de la pila se reparte entre los receptores: V pila = V en L1 + V en L2.</li>
+<li><b>Paralelo:</b> cada receptor recibe todo el voltaje de la pila y la corriente se reparte entre las ramas.</li>
+<li><b>Mixto:</b> el resistor R1 está en serie y se queda con una parte del voltaje; L1 y L2 reciben el mismo voltaje, el que sobra.</li></ul>
+<h2>Modo cálculo (Ley de Ohm)</h2>
+<p>Se muestran dos valores y debes calcular el tercero: <b>V = I × R</b>, <b>I = V ÷ R</b>, <b>R = V ÷ I</b>. En serie se suman las resistencias; en paralelo se suman las corrientes de cada rama. Escribe la respuesta en la unidad que pide el ejercicio.</p>
+<h2>Calculadora</h2>
+<ul><li>La pestaña <b>Calculadora</b> sirve para hacer las cuentas de los ejercicios, por ejemplo V ÷ R o la suma de resistencias.</li>
+<li>Teclas: C (borrar todo), ⌫ (borrar el último dígito), % , ÷, ×, −, +, ± (cambiar de signo), coma decimal y =.</li>
+<li>También funciona con el teclado: números, + − * /, coma o punto, Enter para el resultado, Retroceso y Esc.</li>
+<li>Dividir entre 0 muestra «Error»; pulsa C para seguir.</li>
+<li>Al volver de la calculadora, el ejercicio, las puntas, el interruptor y lo que habías escrito siguen como los dejaste.</li></ul>
+</section></main>
+<div id="abm" hidden><div class="abc" role="dialog" aria-modal="true" aria-label="Acerca de">
+<p style="font-size:13px;color:#4a596b;margin:0">Unidad Educativa Ati II Pillahuaso</p>
+<h2>atiMultimetro</h2><div class="ver">Simulador básico de multímetro digital<br>Versión: 1.0</div>
+<p style="font-size:13px;color:#4a596b">Simulación asistida por IA (Claude)</p>
+<p>Autor y desarrollador:<br><b>José Cruz Abril (Joseca)</b></p>
+<p><a href="https://josecaeduca.blogspot.com" target="_blank" rel="noopener">josecaeduca.blogspot.com</a></p>
+<p style="font-size:13px;color:#4a596b;margin-top:2px">2026</p>
+<button id="abx" type="button">Cerrar</button></div></div>
+<script>
+/* ===== Datos y utilidades ===== */
+const $=s=>document.querySelector(s),NS='http://www.w3.org/2000/svg';
+const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const f=n=>String(+Number(n).toPrecision(4)).replace('.',',');
+const VS=[1.5,3,4.5,6,9,12],RL=[100,150,220,330,470,680,1000],RR=[100,120,150,220,330,470,680,1000,1500,2200,3300,4700,6800,10000];
+const CIR=[{k:'serie',n:'Serie: 2 lámparas',c:[['L1','lamp'],['L2','lamp']]},
+{k:'par',n:'Paralelo: 2 lámparas',c:[['L1','lamp'],['L2','lamp']]},
+{k:'mix',n:'Mixto: resistor y 2 lámparas',c:[['R1','res'],['L1','lamp'],['L2','lamp']]}];
+/* Perilla (12 posiciones). max·10^dec = cuentas máximas; s = factor de escala */
+const POS=[{l:'OFF',t:'off'},
+{l:'DCV 2',t:'dcv',max:2,dec:3,s:1,u:'V'},{l:'DCV 20',t:'dcv',max:20,dec:2,s:1,u:'V'},{l:'DCV 200',t:'dcv',max:200,dec:1,s:1,u:'V'},{l:'DCV 500',t:'dcv',max:500,dec:0,s:1,u:'V'},
+{l:'Ω 200',t:'res',max:200,dec:1,s:1,u:'Ω'},{l:'Ω 2k',t:'res',max:2,dec:3,s:1e3,u:'kΩ'},{l:'Ω 20k',t:'res',max:20,dec:2,s:1e3,u:'kΩ'},{l:'Ω 200k',t:'res',max:200,dec:1,s:1e3,u:'kΩ'},
+{l:'DCA 20m',t:'dca',max:20,dec:2,s:1e-3,u:'mA'},{l:'DCA 200m',t:'dca',max:200,dec:1,s:1e-3,u:'mA'},{l:'10A',t:'dca',max:10,dec:2,s:1,u:'A'}];
+const N=POS.length,LOW=[1,5,9,11],COL={dcv:'#9fe3ff',res:'#ffd27a',dca:'#b6f5a4',off:'#fff'};
+let mode='p',ci=0,Vs=9,R={},closed=true,idx=0,jack='V',ang=0,task=null,tries=0,done=false,TT=[],TC=[];
+const cg=$('#cvg');
+
+/* ===== Modelo: V e I de cada componente (interruptor cerrado) ===== */
+function solve(){const k=CIR[ci].k,r=R,V={},I={};let Rt;
+ if(k==='serie'){Rt=r.L1+r.L2;const i=Vs/Rt;V.L1=i*r.L1;V.L2=i*r.L2;I.L1=I.L2=i}
+ else if(k==='par'){V.L1=V.L2=Vs;I.L1=Vs/r.L1;I.L2=Vs/r.L2;Rt=Vs/(I.L1+I.L2)}
+ else{const rp=1/(1/r.L1+1/r.L2);Rt=r.R1+rp;const i=Vs/Rt;V.R1=i*r.R1;V.L1=V.L2=i*rp;I.R1=i;I.L1=V.L1/r.L1;I.L2=V.L2/r.L2}
+ I.BAT=I.SW=Vs/Rt;V.BAT=Vs;V.SW=0;return{V,I,Rt}}
+function gen(){Vs=pick(VS);CIR[ci].c.forEach(([id,t])=>R[id]=pick(t==='lamp'?RL:RR));closed=true;rest()}
+/* Terminales (puntos amarillos): posición, potencial con el interruptor cerrado (c) y lado respecto al interruptor (p/n) */
+function terms(){const k=CIR[ci].k,s=solve(),v=Vs,T=[],tr=mode==='p'?[350,35]:[190,-25];
+ const t=(id,x,y,c,side)=>T.push({id,x,y,c,side,gx:x+tr[0],gy:y+tr[1]});
+ t('B+',70,150,v,'p');t('B−',70,220,0,'n');
+ if(k==='serie'){const p1=v-s.V.L1;[['G1a',110,v],['G1b',150,v],['L1a',186,v],['L1b',234,p1],['G2a',262,p1],['G2b',298,p1],['L2a',326,p1],['L2b',374,0]].forEach(a=>t(a[0],a[1],70,a[2],'p'));t('S1',315,300,0,'p');t('S2',245,300,0,'n')}
+ else{const m=k==='mix',pj=m?v-s.V.R1:v,b=m?340:255,sx=m?190:150;
+  t('G1a',m?95:110,70,v,'p');t('G1b',m?125:150,70,v,'p');if(m){t('R1a',155,70,v,'p');t('R1b',225,70,pj,'p')}
+  [[b,'2','L1'],[450,'3','L2']].forEach(([x,n,l])=>{t('G'+n+'a',x,100,pj,'p');t('G'+n+'b',x,130,pj,'p');t(l+'a',x,160,pj,'p');t(l+'b',x,210,0,'p')});
+  t('S1',sx+35,300,0,'p');t('S2',sx-35,300,0,'n')}
+ return T}
+const compOf=id=>id==='B+'||id==='B−'?'BAT':id[0]==='S'?'SW':id.slice(0,-1);
+
+/* ===== Dibujo del circuito con símbolos estándar (diagrama) ===== */
+function drawCircuit(){const g=cg,k=CIR[ci].k,s=solve(),pm=mode==='p';g.innerHTML='';TC=[];g.setAttribute('transform',pm?'translate(350,35)':'translate(190,-25)');
+ const ln=(a,b,c,d,w,col)=>el('line',{x1:a,y1:b,x2:c,y2:d,stroke:col||'#33415c','stroke-width':w||4,'stroke-linecap':'round'},g);
+ const T=(x,y,t,sz,a)=>{const e=el('text',{x,y,'text-anchor':a||'middle','font-size':sz||14,'font-weight':700,fill:'#33415c'},g);e.textContent=t};
+ const lamp=(id,x,y)=>{const on=closed?Math.min(.95,.2+s.V[id]*s.I[id]*8):0;
+  el('circle',{cx:x,cy:y,r:21,fill:'#fff',stroke:'#33415c','stroke-width':3},g);el('circle',{cx:x,cy:y,r:18,fill:'#ffd400',opacity:on},g);
+  ln(x-14,y-14,x+14,y+14,3);ln(x-14,y+14,x+14,y-14,3);T(x+(k==='serie'?0:32),y+(k==='serie'?42:5),id,14,k==='serie'?'middle':'start')};
+ const res=(id,x,y)=>{el('rect',{x:x-33,y:y-14,width:66,height:28,fill:'#fff'},g);
+  el('polyline',{points:`${x-35},${y} ${x-25},${y} ${x-19},${y-11} ${x-7},${y+11} ${x+5},${y-11} ${x+17},${y+11} ${x+23},${y} ${x+35},${y}`,fill:'none',stroke:'#33415c','stroke-width':3},g);T(x,y+34,id)};
+ const bat=(x,c)=>{ln(x,70,x,c-9);ln(x,c+9,x,300);ln(x-18,c-9,x+18,c-9,4);ln(x-10,c+9,x+10,c+9,8);T(x+30,c-12,'+',16);T(x+30,c+22,'−',16);T(x-42,c+5,'Pila',14,'end')};
+ /* interruptor: clic sobre él para abrir o cerrar */
+ const sw=(x,y)=>{el('rect',{x:x-38,y:y-12,width:76,height:24,fill:'#fff'},g);
+  closed?ln(x-35,y,x+35,y,5,'#1f9d55'):ln(x-35,y,x+27,y-26,5,'#d33');T(x,y+30,closed?'Interruptor (cerrado)':'Interruptor (abierto)');
+  el('rect',{x:x-50,y:y-40,width:100,height:76,fill:'transparent',style:'cursor:pointer'},g).onclick=()=>{closed=!closed;buildBar();render()}};
+ if(k==='serie'){ln(70,70,490,70);ln(490,70,490,300);ln(70,300,490,300);bat(70,185);lamp('L1',210,70);lamp('L2',350,70);sw(280,300)}
+ else if(k==='par'){ln(70,70,450,70);ln(70,300,450,300);ln(255,70,255,300);ln(450,70,450,300);bat(70,185);
+  for(const y of[70,300])el('circle',{cx:255,cy:y,r:5,fill:'#33415c'},g);lamp('L1',255,185);lamp('L2',450,185);sw(150,300)}
+ else{ln(70,70,450,70);ln(70,300,450,300);ln(340,70,340,300);ln(450,70,450,300);bat(70,185);
+  for(const y of[70,300])el('circle',{cx:340,cy:y,r:5,fill:'#33415c'},g);res('R1',190,70);lamp('L1',340,185);lamp('L2',450,185);sw(190,300)}
+ if(!pm)return;
+ TT.forEach(a=>{if(a.id[0]==='G'&&a.id[2]==='a'){const b=TT.find(x=>x.id===a.id.slice(0,2)+'b'),h=a.y===b.y;
+  ln(a.x,a.y,b.x,b.y,9,'#9aa3ad');T(h?(a.x+b.x)/2:a.x+14,h?a.y-12:(a.y+b.y)/2+5,a.id.slice(0,2),12,h?'middle':'start')}});
+ TC=TT.map(a=>el('circle',{cx:a.x,cy:a.y,r:6.5,fill:'#f0c419',stroke:'#6b5200','stroke-width':2.5},g));hl()}
+function hl(){TC.forEach((c,i)=>c.setAttribute('stroke',near(red)===i||near(black)===i?'#1f9d55':'#6b5200'))}
+
+/* ===== Perilla, pantalla de 7 segmentos y jacks ===== */
+const M=$('#meter'),cx=160,cy=330,labs=[];
+POS.forEach((p,i)=>{const a=i*2*Math.PI/N,s=Math.sin(a),c=-Math.cos(a),r=Math.abs(s)<.35?92:80;
+ el('line',{x1:cx+66*s,y1:cy+66*c,x2:cx+72*s,y2:cy+72*c,stroke:'#fff','stroke-width':2},M);
+ const t=el('text',{x:cx+r*s,y:cy+r*c+4,'text-anchor':s>.35?'start':s<-.35?'end':'middle',class:'dl',fill:COL[p.t]},M);
+ t.textContent=p.l;t.onclick=e=>{e.stopPropagation();setPos(i)};labs.push(t)});
+const knob=el('g',{transform:`translate(${cx},${cy})`,style:'cursor:pointer'},M),kr=el('g',{style:'transition:transform .25s'},knob);
+el('circle',{r:62,fill:'#1e3a8a',stroke:'#14275f','stroke-width':3},kr);el('rect',{x:-15,y:-60,width:30,height:120,rx:15,fill:'#4a6fe0',stroke:'#14275f','stroke-width':2},kr);el('polygon',{points:'0,-54 -6,-40 6,-40',fill:'#fff'},kr);
+knob.onclick=e=>{const b=knob.getBoundingClientRect();setPos((idx+(e.clientX>b.left+b.width/2?1:N-1))%N)};
+knob.addEventListener('wheel',e=>{e.preventDefault();setPos((idx+(e.deltaY>0?1:N-1))%N)},{passive:false});
+function setPos(i){ang+=((i-idx)*360/N+540)%360-180;idx=i;kr.style.transform=`rotate(${ang}deg)`;render()}
+$('#j10').onclick=()=>{jack='A';render()};$('#jV').onclick=()=>{jack='V';render()};
+el('rect',{x:40,y:68,width:240,height:106,rx:8,fill:'#b9cdb0',stroke:'#1c2a5c','stroke-width':3},M);
+const DIG={0:'abcdef',1:'bc',2:'abdeg',3:'abcdg',4:'bcfg',5:'acdfg',6:'acdefg',7:'abc',8:'abcdefg',9:'abcdfg',O:'abcdef',L:'def'},TH=7;
+const pts=a=>a.map(p=>p.join(',')).join(' ');
+const hs=(x,y,l)=>pts([[x,y+TH/2],[x+TH/2,y],[x+l-TH/2,y],[x+l,y+TH/2],[x+l-TH/2,y+TH],[x+TH/2,y+TH]]);
+const vs=(x,y,l)=>pts([[x+TH/2,y],[x+TH,y+TH/2],[x+TH,y+l-TH/2],[x+TH/2,y+l],[x,y+l-TH/2],[x,y+TH/2]]);
+const SP={a:hs(4,0,26),b:vs(27,4,26),c:vs(27,32,26),d:hs(4,55,26),e:vs(0,32,26),f:vs(0,4,26),g:hs(4,27.5,26)};
+const slots=[0,1,2,3].map(i=>{const g=el('g',{transform:`translate(${62+i*48},84) skewX(-4)`},M),p={};for(const k of'abcdefg')p[k]=el('polygon',{points:SP[k]},g);return{p,dp:el('circle',{cx:41,cy:59,r:3.6},g)}});
+const sgn=el('rect',{x:44,y:112,width:12,height:6},M);
+const tx=(x,y,a,s)=>el('text',{x,y,'text-anchor':a,'font-size':s,'font-weight':700,fill:'#13222e'},M);
+const tMode=tx(46,98,'start',12),tUnit=tx(272,166,'end',16);
+function paint(d){slots.forEach((s,i)=>{const c=d.digits[i],on=c&&c!==' '?DIG[c]:'';for(const k of'abcdefg')s.p[k].setAttribute('fill',on.includes(k)?'#13222e':'rgba(19,34,46,.07)');s.dp.setAttribute('fill',d.dp===i?'#13222e':'rgba(19,34,46,.07)')});
+ sgn.setAttribute('fill',d.neg?'#13222e':'rgba(19,34,46,.07)');tMode.textContent=d.mode;tUnit.textContent=d.unit;$('#plugR').setAttribute('cx',jack==='A'?60:260)}
+
+/* ===== Cables (puntas) arrastrables: se pegan al terminal más cercano ===== */
+const red={x:0,y:0,on:-1,col:'#e02b2b',jx:()=>jack==='A'?70:270,path:$('#lr'),rx:885},black={x:0,y:0,on:-1,col:'#222',jx:()=>170,path:$('#lb'),rx:915};
+[red,black].forEach(pr=>{const g=el('g',{style:'cursor:grab;touch-action:none'},$('#probes'));
+ el('polygon',{points:'-2,-18 2,-18 0,0',fill:'#d8d8d8',stroke:'#777'},g);el('rect',{x:-5,y:-24,width:10,height:8,fill:'#999'},g);
+ el('rect',{x:-10,y:-76,width:20,height:54,rx:7,fill:pr.col,stroke:'#fff','stroke-opacity':.5,'stroke-width':2},g);el('rect',{x:-28,y:-95,width:56,height:110,fill:'transparent'},g);g.style.touchAction='none';pr.g=g});
+function place(pr){pr.g.setAttribute('transform',`translate(${pr.x},${pr.y})`);const jx=pr.jx(),jy=552,px=pr.x,py=pr.y-76;
+ pr.path.setAttribute('d',`M${jx} ${jy} C${jx} ${jy+70},${px} ${py+110},${px} ${py}`)}
+function rest(){[red,black].forEach(pr=>{pr.x=pr.rx;pr.y=690;pr.on=-1;place(pr)})}
+function near(pr){let r=-1,m=32;TT.forEach((t,i)=>{const d=Math.hypot(t.gx-pr.x,t.gy-pr.y);if(d<m){m=d;r=i}});return r}
+let drag=null;
+const pt=e=>{const q=$('#sv').createSVGPoint();q.x=e.clientX;q.y=e.clientY;return q.matrixTransform($('#sv').getScreenCTM().inverse())};
+/* Arrastre: los eventos se escuchan en la ventana (no se pierde la punta al mover rápido) y hay «imán» hacia el terminal más cercano */
+[red,black].forEach(pr=>pr.g.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();const q=pt(e);drag={pr,dx:pr.x-q.x,dy:pr.y-q.y,id:e.pointerId};pr.on=-1;pr.g.style.cursor='grabbing';render()}));
+window.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;e.preventDefault();const pr=drag.pr,q=pt(e);
+ pr.x=Math.max(10,Math.min(930,q.x+drag.dx));pr.y=Math.max(20,Math.min(695,q.y+drag.dy));const n=near(pr);if(n>=0){pr.x=TT[n].gx;pr.y=TT[n].gy}place(pr);hl()});
+const dragEnd=e=>{if(!drag||e.pointerId!==drag.id)return;const pr=drag.pr;drag=null;pr.g.style.cursor='grab';const n=near(pr);pr.on=n;if(n>=0){pr.x=TT[n].gx;pr.y=TT[n].gy}place(pr);render()};
+window.addEventListener('pointerup',dragEnd);window.addEventListener('pointercancel',dragEnd);
+
+/* ===== Lectura: física según perilla, jacks y terminales donde están las puntas ===== */
+function reading(){const p=POS[idx],d={digits:'    ',dp:-1,neg:false,unit:p.u||'',mode:p.t==='dcv'||p.t==='dca'?'DC':''};
+ if(p.t==='off')return{d,m:'El multímetro está apagado. Gira la perilla para elegir una función.',c:''};
+ let raw=0,over=false,m='',c='';const need=p.t==='dca'&&p.max===10?'A':'V',ta=TT[red.on],tb=TT[black.on];
+ if(jack!==need){over=p.t==='res';m=`Cable rojo en el jack equivocado: para esta posición debe ir en «${need==='A'?'10A':'VΩmA'}». Haz clic en el jack.`;c='bad'}
+ else if(!ta||!tb||ta===tb){over=p.t==='res';m=!ta&&!tb?'Arrastra la punta roja y la negra hasta los puntos amarillos del circuito.':ta&&tb?'Las dos puntas están en el mismo punto: separa una.':'Falta colocar una de las puntas.'}
+ else{const pv=t=>closed?t.c:(t.side==='p'?Vs:0),dv=pv(ta)-pv(tb),ca=compOf(ta.id),cb=compOf(tb.id);
+  if(p.t==='dcv'){raw=dv;if(!closed&&dv===0){m='Interruptor abierto: no circula corriente, por eso marca 0. Ciérralo para energizar.';c='tip'}}
+  else if(p.t==='res'){
+   if(closed){over=true;m='¡Cuidado! La resistencia se mide SIN energía. Abre el interruptor antes de medir.';c='bad'}
+   else if(ca!==cb){over=true;m='Mide la resistencia entre los dos extremos de UN mismo componente.';c='tip'}
+   else if(ca in R)raw=R[ca];else if(ca[0]==='G')raw=0;
+   else{over=true;m=ca==='SW'?'O.L: con el interruptor abierto la resistencia es infinita.':'No se mide resistencia en una pila (O.L).';c='tip'}}
+  else{const gap=ca===cb&&ca[0]==='G';
+   if(gap){if(closed)raw=(ta.id.endsWith('a')?1:-1)*solve().I[{G1:'BAT',G2:CIR[ci].k==='serie'?'BAT':'L1',G3:'L2'}[ca]];else{m='Interruptor abierto: no circula corriente.';c='tip'}}
+   else if(Math.abs(dv)>1e-9){over=true;m='¡CORTOCIRCUITO! La corriente se mide en SERIE, en un hueco del cable (G1, G2…), nunca en paralelo con un componente o la pila. Se quemaría el fusible.';c='bad'}
+   else{m='Para medir corriente coloca las puntas en los dos extremos de un hueco del cable (G1, G2…).';c='tip'}}}
+ let counts=0;
+ if(!over){counts=Math.round(Math.abs(raw)/p.s*Math.pow(10,p.dec));const lim=p.max*Math.pow(10,p.dec);if(counts>(lim>=2000?1999:lim))over=true;
+  if(over&&!m){m=p.t==='dca'&&p.max<200?'O.L: la corriente excede la escala. Sube de escala.':p.t==='dca'&&p.max===200?'O.L: pasa de 200 mA. Usa la posición 10A y cambia el cable rojo al jack 10A.':'O.L: el valor excede la escala. Sube de escala.';c='bad'}}
+ if(over){d.digits=' OL ';d.dp=1}
+ else{let t=String(counts).padStart(4,'0');if(counts<1000&&p.dec!==3)t=' '+t.slice(1);d.digits=t;d.dp=p.dec>0?3-p.dec:-1;d.neg=raw<0&&counts>0;
+  if(d.neg&&!m){m='Aparece el signo «−»: las puntas están al revés (rojo al lado +). El valor es el mismo.';c='tip'}
+  if(!m&&counts===0&&raw!==0){m=p.t==='dca'&&p.max===10?'Marca 0,00 A porque la corriente es muy pequeña para la escala de 10A (solo distingue de 0,01 A en 0,01 A). Cambia a DCA 20m o DCA 200m y pasa el cable rojo al jack VΩmA.':'La lectura es menor que lo que esta escala puede mostrar: usa una escala más pequeña.';c='tip'}
+  if(!m&&counts>0&&counts<100&&!LOW.includes(idx)){m='La lectura es pequeña: baja la escala para ver más dígitos.';c='tip'}}
+ return{d,m:m||'Lectura estable. Escribe el valor en la unidad que pide el ejercicio.',c}}
+/* Ajusta la escena a la pantalla: en pantallas anchas el ejercicio va debajo del circuito, dentro del dibujo */
+function fit(){const st=$('#stage'),ov=$('#ov'),pm=mode==='p',wide=innerWidth>=820&&pm;if(!st.clientWidth)return;
+ for(const id of['#sv','#sv2'])$(id).setAttribute('viewBox',pm?'0 0 940 700':'0 0 940 320');
+ $('#sv2').style.display=pm?'':'none';
+ st.style.maxWidth=(pm?(wide?Math.max(660,(innerHeight-185)*940/700):1000):820)+'px';
+ if(wide){if(ov.parentNode!==st)st.insertBefore(ov,$('#sv2'));ov.style.cssText=`position:absolute;left:37.2%;top:55%;width:500px;transform-origin:0 0;transform:scale(${st.clientWidth/940})`}
+ else{if(ov.parentNode===st)st.after(ov);ov.style.cssText=''}}
+window.addEventListener('resize',fit);
+function render(){TT=terms();[red,black].forEach(place);const pm=mode==='p';
+ for(const id of['#meter','#leads','#probes'])$(id).style.display=pm?'':'none';
+ const r=reading();paint(r.d);labs.forEach((t,i)=>t.classList.toggle('act',i===idx));
+ const n=$('#mnote');n.style.display=pm?'':'none';n.className='note '+r.c;n.textContent=r.m;drawCircuit();fit()}
+
+/* ===== Ejercicios: modo práctica y modo cálculo ===== */
+function newTask(){const s=solve(),id=pick(CIR[ci].c.map(c=>c[0]));task=null;tries=0;done=false;
+ $('#ans').value='';$('#tfb').style.display='none';$('#given').innerHTML='';$('#formula').style.display='none';
+ if(mode==='p'){const k=pick(['VB','Vc','Vc','Ic','Ic','IB','Rc']);
+  if(k==='VB')task={t:'Mide el voltaje de la pila.',u:'V',a:Vs,s:`El voltaje de la pila es ${f(Vs)} V.`,e:'dcv'};
+  if(k==='Vc')task={t:`Mide el voltaje en ${id}.`,u:'V',a:s.V[id],s:`V = I × R = ${f(s.I[id])} A × ${R[id]} Ω = ${f(s.V[id])} V`,e:'dcv'};
+  if(k==='Ic')task={t:`Mide la corriente que pasa por ${id} (en serie con ${id}).`,u:'mA',a:s.I[id]*1e3,s:`I = V ÷ R = ${f(s.V[id])} V ÷ ${R[id]} Ω = ${f(s.I[id]*1e3)} mA`,e:'dca'};
+  if(k==='IB')task={t:'Mide la corriente total que entrega la pila.',u:'mA',a:s.I.BAT*1e3,s:`I = V ÷ R total = ${f(Vs)} V ÷ ${f(s.Rt)} Ω = ${f(s.I.BAT*1e3)} mA`,e:'dca'};
+  if(k==='Rc')task={t:`Mide la resistencia de ${id} (abre el interruptor y pon las puntas en sus dos extremos).`,u:'Ω',a:R[id],s:`R = ${R[id]} Ω (valor del componente).`,e:'res'};
+  $('#formula').style.display='block';$('#formula').innerHTML='<b>Recuerda:</b> voltaje en paralelo (interruptor cerrado) · corriente en serie, en un hueco G (interruptor cerrado) · resistencia con el interruptor abierto.';
+  $('#tu').textContent='Responde en '+task.u}
+ else{$('#formula').style.display='block';$('#formula').innerHTML='<b>Ley de Ohm:</b> V = I × R &nbsp;·&nbsp; I = V ÷ R &nbsp;·&nbsp; R = V ÷ I &nbsp;(1 A = 1000 mA)';
+  const gv=`Pila: <b>${f(Vs)} V</b>`+CIR[ci].c.map(([i])=>` · ${i}: <b>${R[i]} Ω</b>`).join('');
+  if(Math.random()<.5){const k=CIR[ci].k,a=s.I.BAT*1e3;let so;
+   if(k==='serie')so=`R total = ${R.L1} + ${R.L2} = ${f(s.Rt)} Ω; I = V ÷ R = ${f(Vs)} ÷ ${f(s.Rt)} = ${f(a)} mA`;
+   else if(k==='par')so=`I1 = ${f(Vs)} ÷ ${R.L1} = ${f(s.I.L1*1e3)} mA; I2 = ${f(Vs)} ÷ ${R.L2} = ${f(s.I.L2*1e3)} mA; I total = I1 + I2 = ${f(a)} mA`;
+   else{const rp=R.L1*R.L2/(R.L1+R.L2);so=`R paralelo (L1 y L2) = ${f(rp)} Ω; R total = R1 + R paralelo = ${f(s.Rt)} Ω; I = ${f(Vs)} ÷ ${f(s.Rt)} = ${f(a)} mA`}
+   task={t:'Calcula la corriente total que entrega la pila.',u:'mA',a,s:so};$('#given').innerHTML=gv+'<br><small>Serie: las resistencias se suman. Paralelo: se suman las corrientes de cada rama.</small>'}
+  else{const u=pick(['V','I','R']),v=s.V[id],i=s.I[id]*1e3,r=R[id],g=[];
+   if(u!=='V')g.push(`V = <b>${f(v)} V</b>`);if(u!=='I')g.push(`I = <b>${f(i)} mA</b>`);if(u!=='R')g.push(`R = <b>${r} Ω</b>`);
+   task=u==='V'?{u:'V',a:v,s:`V = I × R = ${f(i/1e3)} A × ${r} Ω = ${f(v)} V`}:u==='I'?{u:'mA',a:i,s:`I = V ÷ R = ${f(v)} V ÷ ${r} Ω = ${f(i)} mA`}:{u:'Ω',a:r,s:`R = V ÷ I = ${f(v)} V ÷ ${f(i/1e3)} A = ${r} Ω`};
+   task.t=`En ${id} se conocen estos valores. Calcula ${u==='V'?'el voltaje':u==='I'?'la corriente':'la resistencia'}.`;$('#given').innerHTML=g.join(' · ')}
+  $('#tu').textContent='Responde en '+task.u}
+ $('#ttxt').textContent=task.t}
+/* Verifica con tolerancia del 5 % (más una mínima por el redondeo de la pantalla) */
+$('#ver').onclick=()=>{if(!task||done)return;const x=Math.abs(parseFloat($('#ans').value.replace(',','.'))),fb=$('#tfb');fb.style.display='block';
+ if(isNaN(x)){fb.className='fb bad';fb.textContent='Escribe un número.';return}
+ const tol=Math.max(Math.abs(task.a)*.05,{V:.02,mA:.02,'Ω':1}[task.u]);
+ if(Math.abs(x-task.a)<=tol){done=true;fb.className='fb ok';fb.textContent='¡Correcto! '+task.s}
+ else{tries++;let h='';const q=x?task.a/x:0;if(q>500||(q>0&&q<.002))h=' Revisa la unidad: responde en '+task.u+'.';
+  if(mode==='p'&&POS[idx].t!==task.e)h+=' Revisa que la perilla esté en la función correcta.';
+  fb.className='fb bad';if(tries>=2){done=true;fb.textContent='Incorrecto. Solución: '+task.s}else fb.textContent='Incorrecto, intenta de nuevo.'+h}};
+$('#next').onclick=()=>{newTask();rest();render()};
+
+/* ===== Barra de circuitos, pestañas y arranque ===== */
+function buildBar(){const b=$('#cbar');b.innerHTML='';
+ CIR.forEach((c,i)=>{const x=document.createElement('button');x.textContent=c.n;x.className=i===ci?'on':'';x.onclick=()=>{ci=i;gen();buildBar();newTask();render()};b.appendChild(x)});
+ const n=document.createElement('button');n.textContent='Valores nuevos';n.onclick=()=>{gen();newTask();render()};b.appendChild(n);
+ if(mode==='p'){const s=document.createElement('button');s.textContent='Interruptor: '+(closed?'cerrado (clic para abrir)':'abierto (clic para cerrar)');s.onclick=()=>{closed=!closed;buildBar();render()};b.appendChild(s)}}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));const m=b.dataset.m;
+ $('#help').hidden=m!=='h';$('#calc').hidden=m!=='k';$('#work').hidden=m==='h'||m==='k';if(m==='h'||m==='k')return;if(m!==mode){mode=m;buildBar();newTask();rest()}render()});
+
+/* ===== Calculadora básica (pestaña «Calculadora») ===== */
+(function(){const dsp=$('#kd'),top=$('#kt');let cur='0',prev=null,op=null,fresh=true,expr='';
+ const fmt=t=>t.replace('.',','),clean=n=>String(parseFloat(n.toPrecision(12))),num=()=>parseFloat(cur);
+ const calc=(a,o,b)=>o==='+'?a+b:o==='−'?a-b:o==='×'?a*b:b===0?NaN:a/b;
+ const show=()=>{dsp.textContent=fmt(cur);top.textContent=expr;dsp.style.fontSize=cur.length>11?'28px':'38px'};
+ function press(k){if(cur==='Error'&&k!=='C')return;
+  if(/^\d$/.test(k)){if(fresh){cur=k;fresh=false}else if(cur.replace(/[-.]/g,'').length<12)cur=cur==='0'?k:cur+k}
+  else if(k===','){if(fresh){cur='0.';fresh=false}else if(!cur.includes('.'))cur+='.'}
+  else if(k==='C'){cur='0';prev=null;op=null;fresh=true;expr=''}
+  else if(k==='⌫'){if(!fresh)cur=cur.length>1&&!(cur.length===2&&cur[0]==='-')?cur.slice(0,-1):'0'}
+  else if(k==='±'){if(num()!==0)cur=cur[0]==='-'?cur.slice(1):'-'+cur}
+  else if(k==='%'){cur=clean(op&&prev!==null?prev*num()/100:num()/100);fresh=true}
+  else if(k==='='){if(op&&prev!==null){const r=calc(prev,op,num());expr=fmt(clean(prev))+' '+op+' '+fmt(cur)+' =';cur=isNaN(r)?'Error':clean(r);prev=null;op=null;fresh=true}}
+  else{if(op&&prev!==null&&!fresh){const r=calc(prev,op,num());cur=isNaN(r)?'Error':clean(r)}
+   if(cur!=='Error'){prev=num();op=k;fresh=true;expr=fmt(clean(prev))+' '+k}else{prev=null;op=null;expr=''}}
+  show()}
+ [['C','cl'],['⌫','fn'],['%','fn'],['÷','op'],['7'],['8'],['9'],['×','op'],['4'],['5'],['6'],['−','op'],['1'],['2'],['3'],['+','op'],['±','fn'],['0'],[','],['=','eq']].forEach(([k,c])=>{
+  const b=document.createElement('button');b.textContent=k;if(c)b.className=c;b.onclick=()=>press(k);$('#keys').appendChild(b)});
+ const KM={'*':'×','/':'÷','-':'−',Enter:'=','=':'=',Backspace:'⌫',Escape:'C','.':',',',':','};
+ window.addEventListener('keydown',e=>{if($('#calc').hidden||e.ctrlKey||e.altKey||e.metaKey)return;const k=/^\d$/.test(e.key)||e.key==='+'||e.key==='%'?e.key:KM[e.key];if(k){e.preventDefault();press(k)}});
+ show();window.kcalc=press})();
+/* Ventana «Acerca de» */
+(()=>{const m=$('#abm'),open=v=>{m.hidden=!v};$('#about').onclick=()=>open(true);$('#abx').onclick=()=>open(false);
+ m.addEventListener('click',e=>{if(e.target===m)open(false)});window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!m.hidden)open(false)})})();
+gen();buildBar();newTask();render();
+</script></body></html>
